@@ -56,3 +56,55 @@ h1 {
   color: var(--or);
   text-align: center;
 }
+
+.panneau {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+.tour {
+  font-size: 0.95rem;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--or);
+}
+.tour strong { color: var(--or); }
+.des-zone { display: flex; gap: 8px; align-items: center; min-height: 44px; }
+.des-vides { font-size: 0.8rem; color: #a08c6a; font-style: italic; }
+.de { width: 42px; height: 42px; }
+.de rect { fill: var(--creme); stroke: var(--or); stroke-width: 3; }
+.de circle { fill: var(--bois-fonce); }
+button {
+  font-family: inherit;
+  font-size: 0.9rem;
+  background: var(--bois-moyen);
+  color: var(--creme);
+  border: 1px solid var(--or);
+  border-radius: 6px;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+button:hover:not(:disabled) { background: var(--bois-clair); }
+button:disabled { opacity: 0.4; cursor: default; }
+.compteurs {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: #cbb98f;
+  margin-bottom: 12px;
+}
+.fleche { cursor: default; }
+.fleche.origine-selectionnee { stroke: var(--or); stroke-width: 3; }
+.fleche.cible { filter: brightness(1.35); cursor: pointer; stroke: var(--or); stroke-width: 3; }
+.barre-zone { cursor: default; }
+.barre-zone.origine-selectionnee { stroke: var(--or); stroke-width: 3; }
+#boutons-sortie { margin-top: 8px; display: flex; justify-content: center; gap: 8px; }
+.fleche.origine-possible { stroke: var(--or); stroke-width: 2; stroke-dasharray: 6 4; cursor: pointer; }
+.barre-zone.origine-possible { stroke: var(--or); stroke-width: 2; stroke-dasharray: 6 4; cursor: pointer; }
+.numero-point { font-family: Georgia, serif; font-size: 15px; fill: var(--or); pointer-events: none; user-select: none; }
