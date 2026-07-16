@@ -12,6 +12,8 @@ const { svg: svgBase, points } = construirePlateauSVG();
 
 let etat = etatInitial();
 let origine = null; // point sélectionné (numéro ou 'barre'), ou null
+let iaActive = true;
+const JOUEUR_IA = 'sombre'; // IA de test : coups légaux choisis au hasard
 
 function versDisposition(pointsEtat) {
   const dispo = {};
@@ -52,7 +54,8 @@ function render() {
     ? etat.des.map(d => deSVG(d)).join('')
     : '<span class="des-vides">Aucun dé lancé</span>';
 
-  const peutLancer = etat.des.length === 0 && !etat.gagnant;
+  const tourIA = iaActive && etat.joueur === JOUEUR_IA;
+  const peutLancer = etat.des.length === 0 && !etat.gagnant && !tourIA;
 
   app.innerHTML = `
     <h1>BACKGAMMON</h1>
@@ -62,6 +65,7 @@ function render() {
       <div class="tour ${etat.joueur}">Au tour de : <strong>${nomCouleur(etat.joueur)}</strong></div>
       <div class="des-zone">${desHTML}</div>
       <button id="btn-lancer" ${peutLancer ? '' : 'disabled'}>Lancer les dés</button>
+      <button id="btn-ia">IA (Sombre) : ${iaActive ? 'activée' : 'désactivée'}</button>
     </div>
 
     <div class="compteurs">
@@ -75,6 +79,7 @@ function render() {
   `;
 
   document.getElementById('btn-lancer').addEventListener('click', surLancerDes);
+  document.getElementById('btn-ia').addEventListener('click', () => { iaActive = !iaActive; render(); });
 
   const svgEl = document.getElementById('plateau-svg');
   svgEl.addEventListener('click', (e) => {
@@ -86,6 +91,7 @@ function render() {
 
   colorierSelection();
   afficherMessage();
+  iaJoue();
 }
 
 function colorierSelection() {
@@ -133,6 +139,10 @@ function afficherMessage() {
     msg.textContent = `${nomCouleur(etat.gagnant)} remporte la partie ! 🏆`;
     return;
   }
+  if (iaActive && etat.joueur === JOUEUR_IA) {
+    msg.textContent = `L'IA (Sombre) joue…`;
+    return;
+  }
   if (etat.des.length === 0) {
     msg.textContent = `${nomCouleur(etat.joueur)} : clique sur « Lancer les dés » pour commencer ton tour.`;
     return;
@@ -155,6 +165,7 @@ function afficherMessage() {
 }
 
 function surLancerDes() {
+  if (iaActive && etat.joueur === JOUEUR_IA) return;
   etat.des = lancerDes();
   if (coupsPossibles(etat, etat.joueur).length === 0) {
     render();
@@ -168,6 +179,7 @@ function surLancerDes() {
 
 function surClicPoint(p) {
   if (etat.des.length === 0 || etat.gagnant) return;
+  if (iaActive && etat.joueur === JOUEUR_IA) return;
 
   if (p === origine) { origine = null; render(); return; }
 
@@ -202,6 +214,35 @@ function jouer(o, d) {
     finDeTour(etat);
   }
   render();
+}
+
+function iaJoue() {
+  if (!iaActive || etat.joueur !== JOUEUR_IA || etat.gagnant) return;
+
+  if (etat.des.length === 0) {
+    setTimeout(() => {
+      if (iaActive && etat.joueur === JOUEUR_IA && !etat.gagnant) {
+        etat.des = lancerDes();
+        if (coupsPossibles(etat, etat.joueur).length === 0) {
+          render();
+          document.getElementById('message').textContent =
+            `Sombre : aucun coup possible avec [${etat.des.join(', ')}] — passe automatique.`;
+          setTimeout(() => { finDeTour(etat); render(); }, 1600);
+          return;
+        }
+        render();
+      }
+    }, 700);
+    return;
+  }
+
+  const coups = coupsPossibles(etat, JOUEUR_IA);
+  if (coups.length === 0) return;
+
+  const choix = coups[Math.floor(Math.random() * coups.length)];
+  setTimeout(() => {
+    if (iaActive && etat.joueur === JOUEUR_IA && !etat.gagnant) jouer(choix.origine, choix.de);
+  }, 700);
 }
 
 render();
