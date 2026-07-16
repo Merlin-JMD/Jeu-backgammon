@@ -1,5 +1,9 @@
 // Position de départ standard (convention 1-24 définie dans board.js) et
 // rendu des pions en SVG, empilés à l'intérieur de chaque flèche.
+// Utilise les vraies images générées (Nano-Banana) plutôt que des formes.
+
+import pionClairUrl from './assets/pieces de jeu de backgammon/pion-clair.png';
+import pionSombreUrl from './assets/pieces de jeu de backgammon/pion-sombre.png';
 
 export const DISPOSITION_INITIALE = {
   24: { couleur: 'clair', nombre: 2 },
@@ -15,28 +19,14 @@ export const DISPOSITION_INITIALE = {
 const RAYON = 27;
 const DIAMETRE_EFFECTIF = RAYON * 1.9; // léger chevauchement pour bien nicher les pions
 
-function defsGradients() {
-  return `
-<defs>
-  <radialGradient id="grad-clair" cx="35%" cy="30%" r="75%">
-    <stop offset="0%" stop-color="#f7ecd6"></stop>
-    <stop offset="100%" stop-color="#cdb37a"></stop>
-  </radialGradient>
-  <radialGradient id="grad-sombre" cx="35%" cy="30%" r="75%">
-    <stop offset="0%" stop-color="#6b4226"></stop>
-    <stop offset="100%" stop-color="#2a180c"></stop>
-  </radialGradient>
-</defs>`.trim();
-}
-
 export function pion(cx, cy, couleur, id) {
-  const grad = couleur === 'clair' ? 'url(#grad-clair)' : 'url(#grad-sombre)';
-  const trait = couleur === 'clair' ? '#9c8a5c' : '#000';
-  return `<circle cx="${cx}" cy="${cy}" r="${RAYON}" fill="${grad}" stroke="${trait}" stroke-width="1.5" class="pion" data-point="${id}"></circle>`;
+  const url = couleur === 'clair' ? pionClairUrl : pionSombreUrl;
+  const taille = RAYON * 2;
+  return `<image href="${url}" x="${cx - RAYON}" y="${cy - RAYON}" width="${taille}" height="${taille}" class="pion" data-point="${id}"></image>`;
 }
 
 export function construirePionsSVG(points, disposition = DISPOSITION_INITIALE) {
-  const elements = [defsGradients()];
+  const elements = [];
 
   for (const [numStr, info] of Object.entries(disposition)) {
     const num = Number(numStr);
@@ -53,7 +43,7 @@ export function construirePionsSVG(points, disposition = DISPOSITION_INITIALE) {
     if (info.nombre > 5) {
       const cyDernier = depart + sens * (visibles - 1) * DIAMETRE_EFFECTIF;
       elements.push(
-        `<text x="${pt.x}" y="${cyDernier + 5}" text-anchor="middle" font-size="20" font-family="Georgia, serif" fill="${info.couleur === 'clair' ? '#2a180c' : '#f7ecd6'}">${info.nombre}</text>`
+        `<text x="${pt.x}" y="${cyDernier + 5}" text-anchor="middle" font-size="20" font-family="Georgia, serif" fill="${info.couleur === 'clair' ? '#2a180c' : '#f7ecd6'}" stroke="#000" stroke-width="0.5">${info.nombre}</text>`
       );
     }
   }
@@ -72,7 +62,7 @@ export function construireBarreSVG(centreX, yHaut, yBas, barre) {
   }
   if (barre.clair > 5) {
     const cy = yHaut + RAYON + 4 + 4 * DIAMETRE_EFFECTIF;
-    elements.push(`<text x="${centreX}" y="${cy + 5}" text-anchor="middle" font-size="20" font-family="Georgia, serif" fill="#2a180c">${barre.clair}</text>`);
+    elements.push(`<text x="${centreX}" y="${cy + 5}" text-anchor="middle" font-size="20" font-family="Georgia, serif" fill="#2a180c" stroke="#fff" stroke-width="0.5">${barre.clair}</text>`);
   }
 
   const nSombre = Math.min(barre.sombre, 5);
@@ -82,7 +72,7 @@ export function construireBarreSVG(centreX, yHaut, yBas, barre) {
   }
   if (barre.sombre > 5) {
     const cy = yBas - RAYON - 4 - 4 * DIAMETRE_EFFECTIF;
-    elements.push(`<text x="${centreX}" y="${cy + 5}" text-anchor="middle" font-size="20" font-family="Georgia, serif" fill="#f7ecd6">${barre.sombre}</text>`);
+    elements.push(`<text x="${centreX}" y="${cy + 5}" text-anchor="middle" font-size="20" font-family="Georgia, serif" fill="#f7ecd6" stroke="#000" stroke-width="0.5">${barre.sombre}</text>`);
   }
 
   return elements.join('\n  ');
