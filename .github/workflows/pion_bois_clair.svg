@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <defs>
+    <filter id="woodGrain" x="0%" y="0%" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.015 0.12" numOctaves="4" result="noise" />
+      <feColorMatrix type="matrix" values="
+        0.28 0.00 0.00 0.00 0.89 
+        0.14 0.14 0.00 0.00 0.78 
+        0.00 0.09 0.09 0.00 0.62 
+        0.00 0.00 0.00 0.00 0.45" in="noise" result="coloredNoise" />
+      <feFlood flood-color="#fef8ee" result="bg" />
+      <feBlend mode="multiply" in="coloredNoise" in2="bg" result="woodTexture" />
+    </filter>
+
+    <radialGradient id="pionLight" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.65" />
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0" />
+      <stop offset="100%" stop-color="#543310" stop-opacity="0.38" />
+    </radialGradient>
+
+    <radialGradient id="sunkenCenter" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#6e471e" stop-opacity="0.55" />
+      <stop offset="35%" stop-color="#b88f5e" stop-opacity="0.2" />
+      <stop offset="75%" stop-color="#ffffff" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.75" />
+    </radialGradient>
+
+    <clipPath id="pionShape">
+      <circle cx="100" cy="100" r="85" />
+    </clipPath>
+  </defs>
+
+  <circle cx="103" cy="106" r="85" fill="#000000" opacity="0.22" filter="blur(5px)" />
+
+  <g clip-path="url(#pionShape)">
+    <rect width="200" height="200" filter="url(#woodGrain)" />
+    
+    <circle cx="100" cy="100" r="85" fill="url(#pionLight)" />
+  </g>
+
+  <circle cx="100" cy="100" r="84" fill="none" stroke="#ffffff" stroke-width="1.5" opacity="0.45" />
+  
+  <circle cx="100" cy="100" r="55" fill="none" stroke="#a37c50" stroke-width="2.5" opacity="0.25" />
+
+  <circle cx="100" cy="100" r="53" fill="url(#sunkenCenter)" />
+
+  <circle cx="100" cy="100" r="51" fill="none" stroke="#ffffff" stroke-width="1.2" opacity="0.3" />
+  <circle cx="100" cy="100" r="30" fill="none" stroke="#543310" stroke-width="1.5" opacity="0.18" />
+  <circle cx="100" cy="100" r="12" fill="none" stroke="#543310" stroke-width="1" opacity="0.12" />
+</svg>
