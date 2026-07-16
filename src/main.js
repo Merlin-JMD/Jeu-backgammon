@@ -1,6 +1,6 @@
-﻿import './style.css';
+import './style.css';
 import { construirePlateauSVG } from './board.js';
-import { construirePionsSVG } from './pieces.js';
+import { construirePionsSVG, construireBarreSVG } from './pieces.js';
 import { deSVG } from './des.js';
 import {
   etatInitial, lancerDes, coupsPossibles, destinationLegale,
@@ -8,7 +8,9 @@ import {
 } from './game.js';
 
 const app = document.getElementById('app');
-const { svg: svgBase, points } = construirePlateauSVG();
+const { svg: svgBase, points, barre: barreCoord } = construirePlateauSVG();
+
+const DELAI_IA = 850; // ms — ralenti d'environ 20% par rapport à la version initiale (700ms)
 
 let etat = etatInitial();
 let origine = null; // point sélectionné (numéro ou 'barre'), ou null
@@ -48,7 +50,8 @@ function originesPossibles() {
 function render() {
   const dispo = versDisposition(etat.points);
   const pionsSVG = construirePionsSVG(points, dispo);
-  const svgComplet = svgBase.replace('</svg>', `${pionsSVG}\n</svg>`);
+  const barreSVG = construireBarreSVG(barreCoord.x, barreCoord.yHaut, barreCoord.yBas, etat.barre);
+  const svgComplet = svgBase.replace('</svg>', `${pionsSVG}\n  ${barreSVG}\n</svg>`);
 
   const desHTML = etat.des.length
     ? etat.des.map(d => deSVG(d)).join('')
@@ -66,6 +69,8 @@ function render() {
       <div class="des-zone">${desHTML}</div>
       <button id="btn-lancer" ${peutLancer ? '' : 'disabled'}>Lancer les dés</button>
       <button id="btn-ia">IA (Sombre) : ${iaActive ? 'activée' : 'désactivée'}</button>
+      <button id="btn-nouvelle">Nouvelle partie</button>
+      <button id="btn-plein-ecran">${document.fullscreenElement ? 'Quitter le plein écran' : 'Plein écran'}</button>
     </div>
 
     <div class="compteurs">
@@ -80,6 +85,8 @@ function render() {
 
   document.getElementById('btn-lancer').addEventListener('click', surLancerDes);
   document.getElementById('btn-ia').addEventListener('click', () => { iaActive = !iaActive; render(); });
+  document.getElementById('btn-nouvelle').addEventListener('click', nouvellePartie);
+  document.getElementById('btn-plein-ecran').addEventListener('click', basculerPleinEcran);
 
   const svgEl = document.getElementById('plateau-svg');
   svgEl.addEventListener('click', (e) => {
@@ -216,6 +223,12 @@ function jouer(o, d) {
   render();
 }
 
+function nouvellePartie() {
+  etat = etatInitial();
+  origine = null;
+  render();
+}
+
 function iaJoue() {
   if (!iaActive || etat.joueur !== JOUEUR_IA || etat.gagnant) return;
 
@@ -232,7 +245,7 @@ function iaJoue() {
         }
         render();
       }
-    }, 700);
+    }, DELAI_IA);
     return;
   }
 
@@ -242,7 +255,21 @@ function iaJoue() {
   const choix = coups[Math.floor(Math.random() * coups.length)];
   setTimeout(() => {
     if (iaActive && etat.joueur === JOUEUR_IA && !etat.gagnant) jouer(choix.origine, choix.de);
-  }, 700);
+  }, DELAI_IA);
 }
+
+function basculerPleinEcran() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen();
+  }
+}
+
+document.addEventListener('fullscreenchange', () => {
+  document.body.classList.toggle('plein-ecran', !!document.fullscreenElement);
+  const btn = document.getElementById('btn-plein-ecran');
+  if (btn) btn.textContent = document.fullscreenElement ? 'Quitter le plein écran' : 'Plein écran';
+});
 
 render();

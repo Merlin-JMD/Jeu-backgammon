@@ -1,4 +1,4 @@
-﻿// Génère le plateau de Backgammon en SVG : 24 flèches numérotées (1-24,
+// Génère le plateau de Backgammon en SVG : 24 flèches numérotées (1-24,
 // convention standard vue du joueur en bas), barre centrale, cadre bois.
 // Retourne la balise <svg> (chaîne) + les coordonnées de chaque flèche.
 //
@@ -80,5 +80,7 @@ export function construirePlateauSVG() {
   ${polys.join('\n  ')}
 </svg>`.trim();
 
-  return { svg, points };
+  const barre = { x: xBarre + BARRE / 2, yHaut: INTERIEUR_Y, yBas: INTERIEUR_Y + INTERIEUR_HAUTEUR };
+
+  return { svg, points, barre };
 }

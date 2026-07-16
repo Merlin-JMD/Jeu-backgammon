@@ -1,4 +1,4 @@
-﻿// Position de départ standard (convention 1-24 définie dans board.js) et
+// Position de départ standard (convention 1-24 définie dans board.js) et
 // rendu des pions en SVG, empilés à l'intérieur de chaque flèche.
 
 export const DISPOSITION_INITIALE = {
@@ -29,7 +29,7 @@ function defsGradients() {
 </defs>`.trim();
 }
 
-function pion(cx, cy, couleur, id) {
+export function pion(cx, cy, couleur, id) {
   const grad = couleur === 'clair' ? 'url(#grad-clair)' : 'url(#grad-sombre)';
   const trait = couleur === 'clair' ? '#9c8a5c' : '#000';
   return `<circle cx="${cx}" cy="${cy}" r="${RAYON}" fill="${grad}" stroke="${trait}" stroke-width="1.5" class="pion" data-point="${id}"></circle>`;
@@ -56,6 +56,33 @@ export function construirePionsSVG(points, disposition = DISPOSITION_INITIALE) {
         `<text x="${pt.x}" y="${cyDernier + 5}" text-anchor="middle" font-size="20" font-family="Georgia, serif" fill="${info.couleur === 'clair' ? '#2a180c' : '#f7ecd6'}">${info.nombre}</text>`
       );
     }
+  }
+
+  return elements.join('\n  ');
+}
+
+
+export function construireBarreSVG(centreX, yHaut, yBas, barre) {
+  const elements = [];
+
+  const nClair = Math.min(barre.clair, 5);
+  for (let i = 0; i < nClair; i++) {
+    const cy = yHaut + RAYON + 4 + i * DIAMETRE_EFFECTIF;
+    elements.push(pion(centreX, cy, 'clair', 'barre'));
+  }
+  if (barre.clair > 5) {
+    const cy = yHaut + RAYON + 4 + 4 * DIAMETRE_EFFECTIF;
+    elements.push(`<text x="${centreX}" y="${cy + 5}" text-anchor="middle" font-size="20" font-family="Georgia, serif" fill="#2a180c">${barre.clair}</text>`);
+  }
+
+  const nSombre = Math.min(barre.sombre, 5);
+  for (let i = 0; i < nSombre; i++) {
+    const cy = yBas - RAYON - 4 - i * DIAMETRE_EFFECTIF;
+    elements.push(pion(centreX, cy, 'sombre', 'barre'));
+  }
+  if (barre.sombre > 5) {
+    const cy = yBas - RAYON - 4 - 4 * DIAMETRE_EFFECTIF;
+    elements.push(`<text x="${centreX}" y="${cy + 5}" text-anchor="middle" font-size="20" font-family="Georgia, serif" fill="#f7ecd6">${barre.sombre}</text>`);
   }
 
   return elements.join('\n  ');

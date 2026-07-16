@@ -108,3 +108,5 @@ button:disabled { opacity: 0.4; cursor: default; }
 .fleche.origine-possible { stroke: var(--or); stroke-width: 2; stroke-dasharray: 6 4; cursor: pointer; }
 .barre-zone.origine-possible { stroke: var(--or); stroke-width: 2; stroke-dasharray: 6 4; cursor: pointer; }
 .numero-point { font-family: Georgia, serif; font-size: 15px; fill: var(--or); pointer-events: none; user-select: none; }
+body.plein-ecran #plateau-cadre { width: min(90vw, 1300px); }
+body.plein-ecran { justify-content: center; }
