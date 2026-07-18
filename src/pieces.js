@@ -16,8 +16,8 @@ export const DISPOSITION_INITIALE = {
   19: { couleur: 'sombre', nombre: 5 },
 };
 
-const RAYON = 27;
-const DIAMETRE_EFFECTIF = RAYON * 1.9; // léger chevauchement pour bien nicher les pions
+const RAYON = 30;
+const DIAMETRE_EFFECTIF = RAYON * 2; // aucun chevauchement, pions côte à côte
 
 export function pion(cx, cy, couleur, id) {
   const url = couleur === 'clair' ? pionClairUrl : pionSombreUrl;

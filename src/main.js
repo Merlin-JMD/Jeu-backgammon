@@ -1,21 +1,30 @@
 import './style.css';
 import { construirePlateauSVG } from './board.js';
 import { construirePionsSVG, construireBarreSVG } from './pieces.js';
-import { deSVG } from './des.js';
+import { deSVG, cubeSVG } from './des.js';
 import {
   etatInitial, lancerDes, coupsPossibles, destinationLegale,
-  jouerCoup, finDeTour, adversaire,
+  jouerCoup, finDeTour, adversaire, calculerPoints,
+  peutProposerDouble, proposerDouble, accepterDouble, refuserDouble,
 } from './game.js';
 
 const app = document.getElementById('app');
 const { svg: svgBase, points, barre: barreCoord } = construirePlateauSVG();
 
-const DELAI_IA = 850; // ms — ralenti d'environ 20% par rapport à la version initiale (700ms)
+const DELAI_IA = 850;
 
 let etat = etatInitial();
-let origine = null; // point sélectionné (numéro ou 'barre'), ou null
+let origine = null;
 let iaActive = true;
-const JOUEUR_IA = 'sombre'; // IA de test : coups légaux choisis au hasard
+const JOUEUR_IA = 'sombre';
+let pointsComptabilises = false;
+let matchEtat = {
+  objectif: 7,
+  score: { clair: 0, sombre: 0 },
+  crawfordJoue: false,
+  crawfordEnAttente: false,
+  crawfordEnCours: false,
+};
 
 function versDisposition(pointsEtat) {
   const dispo = {};
@@ -27,6 +36,14 @@ function versDisposition(pointsEtat) {
 }
 
 function nomCouleur(c) { return c === 'clair' ? 'Clair' : 'Sombre'; }
+
+function texteCube(cube) {
+  if (cube.enAttente) {
+    return `${nomCouleur(cube.enAttente)} propose de doubler à ${cube.valeur * 2} — en attente de la réponse de ${nomCouleur(adversaire(cube.enAttente))}.`;
+  }
+  const lieu = cube.proprietaire ? `chez ${nomCouleur(cube.proprietaire)}` : 'au centre';
+  return `Doubleur : ${cube.valeur} (${lieu})`;
+}
 
 function ciblesDepuisOrigine() {
   const cibles = new Map();
@@ -58,7 +75,34 @@ function render() {
     : '<span class="des-vides">Aucun dé lancé</span>';
 
   const tourIA = iaActive && etat.joueur === JOUEUR_IA;
-  const peutLancer = etat.des.length === 0 && !etat.gagnant && !tourIA;
+  const enAttenteReponse = !!etat.cube.enAttente;
+  const peutLancer = etat.des.length === 0 && !etat.gagnant && !tourIA && !enAttenteReponse;
+  const peutDoubler = !tourIA && !enAttenteReponse && !matchEtat.crawfordEnCours && peutProposerDouble(etat, etat.joueur);
+
+  const zoneCube = `
+    <div class="zone-cube">
+      ${cubeSVG(etat.cube)}
+      <span class="texte-cube">${texteCube(etat.cube)}</span>
+    </div>`;
+
+  const reponseIA = enAttenteReponse && iaActive && adversaire(etat.cube.enAttente) === JOUEUR_IA;
+  const matchTermine = matchEtat.score.clair >= matchEtat.objectif || matchEtat.score.sombre >= matchEtat.objectif;
+  const objectifOptions = [7, 9, 11, 13, 15, 17, 21, 25]
+    .map(n => `<option value="${n}" ${n === matchEtat.objectif ? 'selected' : ''}>${n}</option>`)
+    .join('');
+  const zoneMatch = `
+    <div class="zone-match">
+      <span>Match — Clair : ${matchEtat.score.clair} · Sombre : ${matchEtat.score.sombre} (objectif :
+        <select id="select-objectif" ${(matchEtat.score.clair > 0 || matchEtat.score.sombre > 0) ? 'disabled' : ''}>${objectifOptions}</select>
+        points)
+      </span>
+      ${matchEtat.crawfordEnCours ? '<span class="badge-crawford">Partie Crawford — doublement désactivé</span>' : ''}
+      <button id="btn-nouveau-match">Nouveau match</button>
+    </div>`;
+  const boutonsReponse = (enAttenteReponse && !reponseIA)
+    ? `<button id="btn-accepter">Accepter le double</button>
+       <button id="btn-refuser">Refuser le double</button>`
+    : '';
 
   app.innerHTML = `
     <h1>BACKGAMMON</h1>
@@ -68,10 +112,16 @@ function render() {
       <div class="tour ${etat.joueur}">Au tour de : <strong>${nomCouleur(etat.joueur)}</strong></div>
       <div class="des-zone">${desHTML}</div>
       <button id="btn-lancer" ${peutLancer ? '' : 'disabled'}>Lancer les dés</button>
+      <button id="btn-doubler" ${peutDoubler ? '' : 'disabled'}>Doubler</button>
+      ${boutonsReponse}
       <button id="btn-ia">IA (Sombre) : ${iaActive ? 'activée' : 'désactivée'}</button>
-      <button id="btn-nouvelle">Nouvelle partie</button>
+      <button id="btn-nouvelle" ${matchTermine ? 'disabled' : ''}>Nouvelle partie</button>
       <button id="btn-plein-ecran">${document.fullscreenElement ? 'Quitter le plein écran' : 'Plein écran'}</button>
     </div>
+
+    ${zoneCube}
+
+    ${zoneMatch}
 
     <div class="compteurs">
       <span>Barre — Clair : ${etat.barre.clair} · Sombre : ${etat.barre.sombre}</span>
@@ -84,8 +134,16 @@ function render() {
   `;
 
   document.getElementById('btn-lancer').addEventListener('click', surLancerDes);
+  document.getElementById('btn-doubler').addEventListener('click', surProposerDouble);
+  if (enAttenteReponse && !reponseIA) {
+    document.getElementById('btn-accepter').addEventListener('click', surAccepterDouble);
+    document.getElementById('btn-refuser').addEventListener('click', surRefuserDouble);
+  }
   document.getElementById('btn-ia').addEventListener('click', () => { iaActive = !iaActive; render(); });
   document.getElementById('btn-nouvelle').addEventListener('click', nouvellePartie);
+  document.getElementById('btn-nouveau-match').addEventListener('click', nouveauMatch);
+  const selectObjectif = document.getElementById('select-objectif');
+  if (selectObjectif) selectObjectif.addEventListener('change', (e) => { matchEtat.objectif = Number(e.target.value); render(); });
   document.getElementById('btn-plein-ecran').addEventListener('click', basculerPleinEcran);
 
   const svgEl = document.getElementById('plateau-svg');
@@ -99,6 +157,7 @@ function render() {
   colorierSelection();
   afficherMessage();
   iaJoue();
+  iaRepondDouble();
 }
 
 function colorierSelection() {
@@ -143,7 +202,15 @@ function afficherMessage() {
   zoneSortie.innerHTML = '';
 
   if (etat.gagnant) {
-    msg.textContent = `${nomCouleur(etat.gagnant)} remporte la partie ! 🏆`;
+    const matchTermineMsg = matchEtat.score.clair >= matchEtat.objectif || matchEtat.score.sombre >= matchEtat.objectif;
+    const scoreTexte = `Score du match — Clair : ${matchEtat.score.clair} · Sombre : ${matchEtat.score.sombre}`;
+    msg.textContent = matchTermineMsg
+      ? `${nomCouleur(etat.gagnant)} remporte le match ! 🏆 (${scoreTexte})`
+      : `${nomCouleur(etat.gagnant)} remporte la partie (cube à ${etat.cube.valeur}) — ${scoreTexte}`;
+    return;
+  }
+  if (etat.cube.enAttente) {
+    msg.textContent = `En attente de la réponse de ${nomCouleur(adversaire(etat.cube.enAttente))} au double proposé.`;
     return;
   }
   if (iaActive && etat.joueur === JOUEUR_IA) {
@@ -151,7 +218,7 @@ function afficherMessage() {
     return;
   }
   if (etat.des.length === 0) {
-    msg.textContent = `${nomCouleur(etat.joueur)} : clique sur « Lancer les dés » pour commencer ton tour.`;
+    msg.textContent = `${nomCouleur(etat.joueur)} : clique sur « Lancer les dés » pour commencer ton tour, ou propose un double.`;
     return;
   }
   if (origine === null) {
@@ -173,6 +240,7 @@ function afficherMessage() {
 
 function surLancerDes() {
   if (iaActive && etat.joueur === JOUEUR_IA) return;
+  if (etat.cube.enAttente) return;
   etat.des = lancerDes();
   if (coupsPossibles(etat, etat.joueur).length === 0) {
     render();
@@ -184,9 +252,28 @@ function surLancerDes() {
   render();
 }
 
+function surProposerDouble() {
+  if (matchEtat.crawfordEnCours) return;
+  if (!peutProposerDouble(etat, etat.joueur)) return;
+  proposerDouble(etat, etat.joueur);
+  render();
+}
+
+function surAccepterDouble() {
+  accepterDouble(etat);
+  render();
+}
+
+function surRefuserDouble() {
+  refuserDouble(etat);
+  comptabiliserVictoire();
+  render();
+}
+
 function surClicPoint(p) {
   if (etat.des.length === 0 || etat.gagnant) return;
   if (iaActive && etat.joueur === JOUEUR_IA) return;
+  if (etat.cube.enAttente) return;
 
   if (p === origine) { origine = null; render(); return; }
 
@@ -207,6 +294,7 @@ function surClicPoint(p) {
 
 function jouer(o, d) {
   jouerCoup(etat, etat.joueur, o, d);
+  comptabiliserVictoire();
   origine = null;
 
   if (!etat.gagnant && etat.des.length > 0 && coupsPossibles(etat, etat.joueur).length === 0) {
@@ -223,18 +311,51 @@ function jouer(o, d) {
   render();
 }
 
+function comptabiliserVictoire() {
+  if (!etat.gagnant || pointsComptabilises) return;
+  const points = calculerPoints(etat);
+  matchEtat.score[etat.gagnant] += points;
+  pointsComptabilises = true;
+  const dejaEnJeu = matchEtat.score.clair >= matchEtat.objectif || matchEtat.score.sombre >= matchEtat.objectif;
+  if (!matchEtat.crawfordJoue && !dejaEnJeu && (matchEtat.score.clair === matchEtat.objectif - 1 || matchEtat.score.sombre === matchEtat.objectif - 1)) {
+    matchEtat.crawfordEnAttente = true;
+  }
+}
+
 function nouvellePartie() {
   etat = etatInitial();
   origine = null;
+  pointsComptabilises = false;
+  if (matchEtat.crawfordEnAttente) {
+    matchEtat.crawfordEnCours = true;
+    matchEtat.crawfordJoue = true;
+    matchEtat.crawfordEnAttente = false;
+  } else {
+    matchEtat.crawfordEnCours = false;
+  }
   render();
+}
+
+function nouveauMatch() {
+  matchEtat.score = { clair: 0, sombre: 0 };
+  matchEtat.crawfordJoue = false;
+  matchEtat.crawfordEnAttente = false;
+  matchEtat.crawfordEnCours = false;
+  nouvellePartie();
 }
 
 function iaJoue() {
   if (!iaActive || etat.joueur !== JOUEUR_IA || etat.gagnant) return;
+  if (etat.cube.enAttente) return;
 
   if (etat.des.length === 0) {
     setTimeout(() => {
-      if (iaActive && etat.joueur === JOUEUR_IA && !etat.gagnant) {
+      if (iaActive && etat.joueur === JOUEUR_IA && !etat.gagnant && !etat.cube.enAttente) {
+        if (!matchEtat.crawfordEnCours && peutProposerDouble(etat, JOUEUR_IA) && Math.random() < 0.2) {
+          proposerDouble(etat, JOUEUR_IA);
+          render();
+          return;
+        }
         etat.des = lancerDes();
         if (coupsPossibles(etat, etat.joueur).length === 0) {
           render();
@@ -273,3 +394,15 @@ document.addEventListener('fullscreenchange', () => {
 });
 
 render();
+
+function iaRepondDouble() {
+  if (!iaActive || !etat.cube.enAttente || etat.gagnant) return;
+  if (adversaire(etat.cube.enAttente) !== JOUEUR_IA) return;
+  setTimeout(() => {
+    if (iaActive && etat.cube.enAttente && !etat.gagnant) {
+      accepterDouble(etat);
+      render();
+      document.getElementById('message').textContent = `Sombre a accepté le double (cube à ${etat.cube.valeur}).`;
+    }
+  }, DELAI_IA);
+}

@@ -17,3 +17,12 @@ export function deSVG(valeur, joue = false) {
   <g>${pastilles}</g>
 </svg>`.trim();
 }
+
+export function cubeSVG(cube) {
+  const classe = cube.proprietaire ? `cube-${cube.proprietaire}` : 'cube-centre';
+  return `
+<svg viewBox="0 0 100 100" class="cube ${classe}">
+  <rect x="4" y="4" width="92" height="92" rx="10"></rect>
+  <text x="50" y="50" text-anchor="middle" dominant-baseline="central" class="cube-texte">${cube.valeur}</text>
+</svg>`.trim();
+}

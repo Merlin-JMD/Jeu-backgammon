@@ -29,12 +29,16 @@ h1 {
   color: var(--or);
   margin: 8px 0 2px;
   font-weight: normal;
+  text-align: center;
+  width: 100%;
 }
 .sous-titre {
   font-size: 0.8rem;
   color: #a08c6a;
   font-style: italic;
   margin-bottom: 16px;
+  text-align: center;
+  width: 100%;
 }
 #plateau-cadre {
   width: min(94vw, 900px);
@@ -140,4 +144,57 @@ body.plein-ecran { justify-content: center; }
   font-size: 0.75rem;
   color: var(--or);
   word-break: break-all;
+}
+
+.zone-cube {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 10px 0;
+}
+.cube {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+}
+.cube rect {
+  fill: #3b2a1a;
+  stroke: #d4af7a;
+  stroke-width: 3;
+}
+.cube-texte {
+  fill: #d4af7a;
+  font-size: 42px;
+  font-weight: bold;
+}
+.cube-clair rect { stroke: #f0e0c0; }
+.cube-sombre rect { stroke: #8a5a2a; }
+.texte-cube {
+  color: #d4af7a;
+  font-style: italic;
+}
+
+.zone-match {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 10px 0;
+  color: #d4af7a;
+}
+.zone-match select {
+  background: #3b2a1a;
+  color: #d4af7a;
+  border: 1px solid #d4af7a;
+  border-radius: 4px;
+  padding: 2px 4px;
+}
+.badge-crawford {
+  color: #e8b84b;
+  font-weight: bold;
+  border: 1px solid #e8b84b;
+  border-radius: 4px;
+  padding: 2px 8px;
 }

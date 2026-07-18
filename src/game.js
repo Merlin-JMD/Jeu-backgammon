@@ -1,4 +1,4 @@
-﻿// Logique du jeu : état, règles de déplacement, capture, sortie (bearing off),
+// Logique du jeu : état, règles de déplacement, capture, sortie (bearing off),
 // entrée depuis la barre. Aucune dépendance au DOM — fonctions pures/état simple.
 
 export function etatInitial() {
@@ -15,6 +15,7 @@ export function etatInitial() {
     joueur: 'clair',
     des: [],
     gagnant: null,
+    cube: { valeur: 1, proprietaire: null, enAttente: null },
   };
 }
 
@@ -109,7 +110,7 @@ export function jouerCoup(etat, j, origine, d) {
   const idx = etat.des.indexOf(d);
   etat.des.splice(idx, 1);
 
-  if (etat.sorties[j] === 15) etat.gagnant = j;
+  if (etat.sorties[j] === 15) { etat.gagnant = j; etat.finPar = 'sortie'; }
 
   return etat;
 }
@@ -123,4 +124,46 @@ export function lancerDes() {
 export function finDeTour(etat) {
   etat.des = [];
   etat.joueur = adversaire(etat.joueur);
+}
+
+export function peutProposerDouble(etat, j) {
+  if (etat.gagnant || etat.des.length > 0) return false;
+  if (etat.cube.enAttente) return false;
+  return etat.cube.proprietaire === null || etat.cube.proprietaire === j;
+}
+export function proposerDouble(etat, j) {
+  if (!peutProposerDouble(etat, j)) return etat;
+  etat.cube.enAttente = j;
+  return etat;
+}
+export function accepterDouble(etat) {
+  const proposant = etat.cube.enAttente;
+  if (!proposant) return etat;
+  etat.cube.valeur *= 2;
+  etat.cube.proprietaire = adversaire(proposant);
+  etat.cube.enAttente = null;
+  return etat;
+}
+export function refuserDouble(etat) {
+  const proposant = etat.cube.enAttente;
+  if (!proposant) return etat;
+  etat.gagnant = proposant;
+  etat.finPar = 'refus';
+  etat.cube.enAttente = null;
+  return etat;
+}
+
+export function calculerPoints(etat) {
+  if (!etat.gagnant) return 0;
+  if (etat.finPar === 'refus') return etat.cube.valeur;
+  const perdant = adversaire(etat.gagnant);
+  if (etat.sorties[perdant] > 0) return etat.cube.valeur;
+  const maisonGagnant = etat.gagnant === 'clair' ? [1, 2, 3, 4, 5, 6] : [19, 20, 21, 22, 23, 24];
+  let backgammon = etat.barre[perdant] > 0;
+  if (!backgammon) {
+    for (const p of maisonGagnant) {
+      if (etat.points[p].couleur === perdant && etat.points[p].nombre > 0) { backgammon = true; break; }
+    }
+  }
+  return etat.cube.valeur * (backgammon ? 3 : 2);
 }
