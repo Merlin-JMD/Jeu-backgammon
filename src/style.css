@@ -1,4 +1,5 @@
 :root {
+  --table-largeur: 900px;
   --bois-fonce: #2b1d12;
   --bois-moyen: #4a3420;
   --bois-clair: #6b4c2a;
@@ -36,12 +37,13 @@ h1 {
   font-size: 0.8rem;
   color: #a08c6a;
   font-style: italic;
-  margin-bottom: 16px;
+  margin-bottom: 40px;
   text-align: center;
   width: 100%;
 }
 #plateau-cadre {
-  width: min(94vw, 900px);
+  width: min(94vw, var(--table-largeur));
+  position: relative;
 }
 #plateau-svg {
   width: 100%;
@@ -54,7 +56,7 @@ h1 {
   stroke-width: 1;
 }
 #message {
-  margin-top: 14px;
+  margin-top: 40px;
   min-height: 1.6em;
   font-size: 1rem;
   color: var(--or);
@@ -66,8 +68,9 @@ h1 {
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: space-between;
   margin-bottom: 10px;
+  width: min(94vw, var(--table-largeur));
 }
 .tour {
   font-size: 0.95rem;
@@ -76,7 +79,7 @@ h1 {
   border: 1px solid var(--or);
 }
 .tour strong { color: var(--or); }
-.des-zone { display: flex; gap: 8px; align-items: center; min-height: 44px; }
+.des-zone { display: flex; gap: 8px; align-items: center; min-height: 44px; min-width: 192px; }
 .des-vides { font-size: 0.8rem; color: #a08c6a; font-style: italic; }
 .de { width: 42px; height: 42px; }
 .de rect { fill: var(--creme); stroke: var(--or); stroke-width: 3; }
@@ -112,7 +115,7 @@ button:disabled { opacity: 0.4; cursor: default; }
 .fleche.origine-possible { stroke: var(--or); stroke-width: 2; stroke-dasharray: 6 4; cursor: pointer; }
 .barre-zone.origine-possible { stroke: var(--or); stroke-width: 2; stroke-dasharray: 6 4; cursor: pointer; }
 .numero-point { font-family: Georgia, serif; font-size: 15px; fill: var(--or); pointer-events: none; user-select: none; }
-body.plein-ecran #plateau-cadre { width: min(90vw, 1300px); }
+
 body.plein-ecran { justify-content: center; }
 #table-demo {
   display: flex;
@@ -149,9 +152,10 @@ body.plein-ecran { justify-content: center; }
 .zone-cube {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 12px;
-  margin: 10px 0;
+  margin: 10px 0 58px 0;
+  width: min(94vw, var(--table-largeur));
 }
 .cube {
   width: 48px;
@@ -175,26 +179,37 @@ body.plein-ecran { justify-content: center; }
   font-style: italic;
 }
 
-.zone-match {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin: 10px 0;
-  color: #d4af7a;
-}
-.zone-match select {
-  background: #3b2a1a;
-  color: #d4af7a;
-  border: 1px solid #d4af7a;
-  border-radius: 4px;
-  padding: 2px 4px;
-}
+
 .badge-crawford {
   color: #e8b84b;
   font-weight: bold;
   border: 1px solid #e8b84b;
   border-radius: 4px;
   padding: 2px 8px;
+}
+
+.groupe-doubleur {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.groupe-match {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.poignee-resize {
+  position: absolute;
+  left: -8px;
+  bottom: -8px;
+  width: 22px;
+  height: 22px;
+  background: var(--or);
+  border: 2px solid var(--bois-fonce);
+  border-radius: 4px;
+  cursor: nesw-resize;
+  z-index: 10;
 }

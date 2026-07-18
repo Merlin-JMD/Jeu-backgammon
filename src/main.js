@@ -11,6 +11,11 @@ import {
 const app = document.getElementById('app');
 const { svg: svgBase, points, barre: barreCoord } = construirePlateauSVG();
 
+const largeurSauvegardee = localStorage.getItem('backgammon-table-largeur');
+if (largeurSauvegardee) {
+  document.documentElement.style.setProperty('--table-largeur', largeurSauvegardee + 'px');
+}
+
 const DELAI_IA = 850;
 
 let etat = etatInitial();
@@ -79,26 +84,25 @@ function render() {
   const peutLancer = etat.des.length === 0 && !etat.gagnant && !tourIA && !enAttenteReponse;
   const peutDoubler = !tourIA && !enAttenteReponse && !matchEtat.crawfordEnCours && peutProposerDouble(etat, etat.joueur);
 
-  const zoneCube = `
-    <div class="zone-cube">
-      ${cubeSVG(etat.cube)}
-      <span class="texte-cube">${texteCube(etat.cube)}</span>
-    </div>`;
-
-  const reponseIA = enAttenteReponse && iaActive && adversaire(etat.cube.enAttente) === JOUEUR_IA;
   const matchTermine = matchEtat.score.clair >= matchEtat.objectif || matchEtat.score.sombre >= matchEtat.objectif;
   const objectifOptions = [7, 9, 11, 13, 15, 17, 21, 25]
     .map(n => `<option value="${n}" ${n === matchEtat.objectif ? 'selected' : ''}>${n}</option>`)
     .join('');
-  const zoneMatch = `
-    <div class="zone-match">
-      <span>Match — Clair : ${matchEtat.score.clair} · Sombre : ${matchEtat.score.sombre} (objectif :
+  const zoneCube = `
+    <div class="zone-cube">
+      <span class="groupe-match">Match — Clair : ${matchEtat.score.clair} · Sombre : ${matchEtat.score.sombre} (objectif :
         <select id="select-objectif" ${(matchEtat.score.clair > 0 || matchEtat.score.sombre > 0) ? 'disabled' : ''}>${objectifOptions}</select>
         points)
+        ${matchEtat.crawfordEnCours ? '<span class="badge-crawford">Partie Crawford — doublement désactivé</span>' : ''}
       </span>
-      ${matchEtat.crawfordEnCours ? '<span class="badge-crawford">Partie Crawford — doublement désactivé</span>' : ''}
-      <button id="btn-nouveau-match">Nouveau match</button>
+      <div class="groupe-doubleur">
+        ${cubeSVG(etat.cube)}
+        <span class="texte-cube">${texteCube(etat.cube)}</span>
+        <button id="btn-doubler" ${peutDoubler ? '' : 'disabled'}>Doubler</button>
+      </div>
     </div>`;
+
+  const reponseIA = enAttenteReponse && iaActive && adversaire(etat.cube.enAttente) === JOUEUR_IA;
   const boutonsReponse = (enAttenteReponse && !reponseIA)
     ? `<button id="btn-accepter">Accepter le double</button>
        <button id="btn-refuser">Refuser le double</button>`
@@ -110,25 +114,17 @@ function render() {
 
     <div class="panneau">
       <div class="tour ${etat.joueur}">Au tour de : <strong>${nomCouleur(etat.joueur)}</strong></div>
-      <div class="des-zone">${desHTML}</div>
       <button id="btn-lancer" ${peutLancer ? '' : 'disabled'}>Lancer les dés</button>
-      <button id="btn-doubler" ${peutDoubler ? '' : 'disabled'}>Doubler</button>
-      ${boutonsReponse}
-      <button id="btn-ia">IA (Sombre) : ${iaActive ? 'activée' : 'désactivée'}</button>
-      <button id="btn-nouvelle" ${matchTermine ? 'disabled' : ''}>Nouvelle partie</button>
+      <div class="des-zone">${desHTML}</div>
       <button id="btn-plein-ecran">${document.fullscreenElement ? 'Quitter le plein écran' : 'Plein écran'}</button>
+      ${boutonsReponse}
+      <button id="btn-nouvelle">Nouvelle partie</button>
     </div>
 
     ${zoneCube}
 
-    ${zoneMatch}
 
-    <div class="compteurs">
-      <span>Barre — Clair : ${etat.barre.clair} · Sombre : ${etat.barre.sombre}</span>
-      <span>Sorties — Clair : ${etat.sorties.clair} / 15 · Sombre : ${etat.sorties.sombre} / 15</span>
-    </div>
-
-    <div id="plateau-cadre">${svgComplet}</div>
+    <div id="plateau-cadre">${svgComplet}<div id="poignee-resize" class="poignee-resize" title="Glisser pour agrandir/rétrécir la table"></div></div>
     <div id="message"></div>
     <div id="boutons-sortie"></div>
   `;
@@ -139,9 +135,9 @@ function render() {
     document.getElementById('btn-accepter').addEventListener('click', surAccepterDouble);
     document.getElementById('btn-refuser').addEventListener('click', surRefuserDouble);
   }
-  document.getElementById('btn-ia').addEventListener('click', () => { iaActive = !iaActive; render(); });
+
   document.getElementById('btn-nouvelle').addEventListener('click', nouvellePartie);
-  document.getElementById('btn-nouveau-match').addEventListener('click', nouveauMatch);
+
   const selectObjectif = document.getElementById('select-objectif');
   if (selectObjectif) selectObjectif.addEventListener('change', (e) => { matchEtat.objectif = Number(e.target.value); render(); });
   document.getElementById('btn-plein-ecran').addEventListener('click', basculerPleinEcran);
@@ -158,6 +154,7 @@ function render() {
   afficherMessage();
   iaJoue();
   iaRepondDouble();
+  activerPoigneeResize();
 }
 
 function colorierSelection() {
@@ -219,6 +216,10 @@ function afficherMessage() {
   }
   if (etat.des.length === 0) {
     msg.textContent = `${nomCouleur(etat.joueur)} : clique sur « Lancer les dés » pour commencer ton tour, ou propose un double.`;
+    return;
+  }
+  if (etat.premierTour && origine === null) {
+    msg.textContent = `Tirage d'ouverture — Clair : ${etat.ouvertureNombres.clair}, Sombre : ${etat.ouvertureNombres.sombre} — ${nomCouleur(etat.joueur)} commence avec [${etat.des.join(', ')}].`;
     return;
   }
   if (origine === null) {
@@ -336,13 +337,6 @@ function nouvellePartie() {
   render();
 }
 
-function nouveauMatch() {
-  matchEtat.score = { clair: 0, sombre: 0 };
-  matchEtat.crawfordJoue = false;
-  matchEtat.crawfordEnAttente = false;
-  matchEtat.crawfordEnCours = false;
-  nouvellePartie();
-}
 
 function iaJoue() {
   if (!iaActive || etat.joueur !== JOUEUR_IA || etat.gagnant) return;
@@ -405,4 +399,29 @@ function iaRepondDouble() {
       document.getElementById('message').textContent = `Sombre a accepté le double (cube à ${etat.cube.valeur}).`;
     }
   }, DELAI_IA);
+}
+
+function activerPoigneeResize() {
+  const poignee = document.getElementById('poignee-resize');
+  if (!poignee || poignee.dataset.actif) return;
+  poignee.dataset.actif = '1';
+  poignee.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    const largeurDepart = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--table-largeur')) || 900;
+    const xDepart = e.clientX;
+    function surDeplacement(ev) {
+      const delta = xDepart - ev.clientX;
+      let nouvelleLargeur = largeurDepart + delta;
+      nouvelleLargeur = Math.max(400, Math.min(1400, nouvelleLargeur));
+      document.documentElement.style.setProperty('--table-largeur', nouvelleLargeur + 'px');
+    }
+    function surRelachement() {
+      document.removeEventListener('mousemove', surDeplacement);
+      document.removeEventListener('mouseup', surRelachement);
+      const largeurActuelle = getComputedStyle(document.documentElement).getPropertyValue('--table-largeur').trim();
+      localStorage.setItem('backgammon-table-largeur', parseInt(largeurActuelle));
+    }
+    document.addEventListener('mousemove', surDeplacement);
+    document.addEventListener('mouseup', surRelachement);
+  });
 }

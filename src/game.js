@@ -8,14 +8,23 @@ export function etatInitial() {
     1: ['sombre', 2], 12: ['sombre', 5], 17: ['sombre', 3], 19: ['sombre', 5],
   };
   for (const [p, [c, n]] of Object.entries(dispo)) points[p] = { couleur: c, nombre: n };
+  let a, b;
+  do {
+    a = 1 + Math.floor(Math.random() * 6);
+    b = 1 + Math.floor(Math.random() * 6);
+  } while (a === b);
+  const debutant = a > b ? 'clair' : 'sombre';
   return {
     points,
     barre: { clair: 0, sombre: 0 },
     sorties: { clair: 0, sombre: 0 },
-    joueur: 'clair',
-    des: [],
+    joueur: debutant,
+    des: [a, b],
     gagnant: null,
+    finPar: null,
     cube: { valeur: 1, proprietaire: null, enAttente: null },
+    premierTour: true,
+    ouvertureNombres: { clair: a, sombre: b },
   };
 }
 
@@ -85,6 +94,7 @@ export function coupsPossibles(etat, j) {
 export function jouerCoup(etat, j, origine, d) {
   const dest = destinationLegale(etat, j, origine, d);
   if (dest === null) return etat;
+  etat.premierTour = false;
 
   if (origine === 'barre') {
     etat.barre[j]--;
