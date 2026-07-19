@@ -16,7 +16,7 @@ if (largeurSauvegardee) {
   document.documentElement.style.setProperty('--table-largeur', largeurSauvegardee + 'px');
 }
 
-const DELAI_IA = 5000;
+const DELAI_IA = 2500;
 
 let etat = etatInitial();
 let origine = null;
@@ -124,8 +124,8 @@ function render() {
         </div>
         <div class="boutons-double">
           <button id="btn-doubler" ${peutDoubler ? '' : 'disabled'}>Doubler</button>
-          <button id="btn-accepter" ${reponseDisponible ? '' : 'disabled'}>Accepter le double</button>
-          <button id="btn-refuser" ${reponseDisponible ? '' : 'disabled'}>Refuser le double</button>
+          <button id="btn-accepter" ${reponseDisponible ? '' : 'disabled'}>Accepter</button>
+          <button id="btn-refuser" ${reponseDisponible ? '' : 'disabled'}>Refuser</button>
         </div>
       </div>
     </div>
@@ -140,7 +140,7 @@ function render() {
 
   document.getElementById('btn-lancer').addEventListener('click', surLancerDes);
   document.getElementById('btn-doubler').addEventListener('click', surProposerDouble);
-  if (enAttenteReponse && !reponseIA) {
+  if (reponseDisponible) {
     document.getElementById('btn-accepter').addEventListener('click', surAccepterDouble);
     document.getElementById('btn-refuser').addEventListener('click', surRefuserDouble);
   }
