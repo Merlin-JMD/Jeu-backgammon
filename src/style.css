@@ -77,6 +77,8 @@ h1 {
   padding: 6px 12px;
   border-radius: 8px;
   border: 1px solid var(--or);
+  min-width: 160px;
+  text-align: center;
 }
 .tour strong { color: var(--or); }
 .des-zone { display: flex; gap: 8px; align-items: center; min-height: 44px; min-width: 192px; }
@@ -175,6 +177,10 @@ body.plein-ecran { justify-content: center; }
 .cube-clair rect { stroke: #f0e0c0; }
 .cube-sombre rect { stroke: #8a5a2a; }
 .texte-cube {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 48px;
   color: #d4af7a;
   font-style: italic;
 }
@@ -212,4 +218,26 @@ body.plein-ecran { justify-content: center; }
   border-radius: 4px;
   cursor: nesw-resize;
   z-index: 10;
+}
+
+.tour-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.doubleur-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.boutons-double {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.groupe-doubleur-complet {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }

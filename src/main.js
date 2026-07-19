@@ -16,7 +16,7 @@ if (largeurSauvegardee) {
   document.documentElement.style.setProperty('--table-largeur', largeurSauvegardee + 'px');
 }
 
-const DELAI_IA = 850;
+const DELAI_IA = 5000;
 
 let etat = etatInitial();
 let origine = null;
@@ -42,12 +42,12 @@ function versDisposition(pointsEtat) {
 
 function nomCouleur(c) { return c === 'clair' ? 'Clair' : 'Sombre'; }
 
-function texteCube(cube) {
-  if (cube.enAttente) {
-    return `${nomCouleur(cube.enAttente)} propose de doubler à ${cube.valeur * 2} — en attente de la réponse de ${nomCouleur(adversaire(cube.enAttente))}.`;
-  }
-  const lieu = cube.proprietaire ? `chez ${nomCouleur(cube.proprietaire)}` : 'au centre';
-  return `Doubleur : ${cube.valeur} (${lieu})`;
+function texteCubeHaut(cube) {
+  return cube.enAttente ? `${nomCouleur(cube.enAttente)} propose` : 'Doubleur';
+}
+function texteCubeBas(cube) {
+  if (cube.enAttente) return `${cube.valeur * 2}`;
+  return cube.proprietaire ? `(chez ${nomCouleur(cube.proprietaire)})` : '(au centre)';
 }
 
 function ciblesDepuisOrigine() {
@@ -88,6 +88,7 @@ function render() {
   const objectifOptions = [7, 9, 11, 13, 15, 17, 21, 25]
     .map(n => `<option value="${n}" ${n === matchEtat.objectif ? 'selected' : ''}>${n}</option>`)
     .join('');
+  const reponseDisponible = enAttenteReponse && !(iaActive && adversaire(etat.cube.enAttente) === JOUEUR_IA);
   const zoneCube = `
     <div class="zone-cube">
       <span class="groupe-match">Match — Clair : ${matchEtat.score.clair} · Sombre : ${matchEtat.score.sombre} (objectif :
@@ -95,30 +96,38 @@ function render() {
         points)
         ${matchEtat.crawfordEnCours ? '<span class="badge-crawford">Partie Crawford — doublement désactivé</span>' : ''}
       </span>
-      <div class="groupe-doubleur">
-        ${cubeSVG(etat.cube)}
-        <span class="texte-cube">${texteCube(etat.cube)}</span>
-        <button id="btn-doubler" ${peutDoubler ? '' : 'disabled'}>Doubler</button>
+      <div class="groupe-fin">
+        <button id="btn-plein-ecran">${document.fullscreenElement ? 'Quitter le plein écran' : 'Plein écran'}</button>
+        <button id="btn-nouvelle">Nouvelle partie</button>
       </div>
     </div>`;
 
-  const reponseIA = enAttenteReponse && iaActive && adversaire(etat.cube.enAttente) === JOUEUR_IA;
-  const boutonsReponse = (enAttenteReponse && !reponseIA)
-    ? `<button id="btn-accepter">Accepter le double</button>
-       <button id="btn-refuser">Refuser le double</button>`
-    : '';
+
 
   app.innerHTML = `
     <h1>BACKGAMMON</h1>
     <div class="sous-titre">Jeu classique · règles complètes</div>
 
     <div class="panneau">
-      <div class="tour ${etat.joueur}">Au tour de : <strong>${nomCouleur(etat.joueur)}</strong></div>
-      <button id="btn-lancer" ${peutLancer ? '' : 'disabled'}>Lancer les dés</button>
-      <div class="des-zone">${desHTML}</div>
-      <button id="btn-plein-ecran">${document.fullscreenElement ? 'Quitter le plein écran' : 'Plein écran'}</button>
-      ${boutonsReponse}
-      <button id="btn-nouvelle">Nouvelle partie</button>
+      <div class="tour-inline">
+        <div class="tour ${etat.joueur}">Au tour de : <strong>${nomCouleur(etat.joueur)}</strong></div>
+        <button id="btn-lancer" ${peutLancer ? '' : 'disabled'}>Lancer les dés</button>
+        <div class="des-zone">${desHTML}</div>
+      </div>
+      <div class="groupe-doubleur-complet">
+        <div class="doubleur-inline">
+          ${cubeSVG(etat.cube)}
+          <div class="texte-cube">
+            <span>${texteCubeHaut(etat.cube)}</span>
+            <span>${texteCubeBas(etat.cube)}</span>
+          </div>
+        </div>
+        <div class="boutons-double">
+          <button id="btn-doubler" ${peutDoubler ? '' : 'disabled'}>Doubler</button>
+          <button id="btn-accepter" ${reponseDisponible ? '' : 'disabled'}>Accepter le double</button>
+          <button id="btn-refuser" ${reponseDisponible ? '' : 'disabled'}>Refuser le double</button>
+        </div>
+      </div>
     </div>
 
     ${zoneCube}
