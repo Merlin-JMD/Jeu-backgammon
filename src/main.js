@@ -43,10 +43,10 @@ function versDisposition(pointsEtat) {
 function nomCouleur(c) { return c === 'clair' ? 'Clair' : 'Sombre'; }
 
 function texteCubeHaut(cube) {
-  return cube.enAttente ? `${nomCouleur(cube.enAttente)} propose` : 'Doubleur';
+  return cube.enAttente ? nomCouleur(cube.enAttente) : 'Doubleur';
 }
 function texteCubeBas(cube) {
-  if (cube.enAttente) return `${cube.valeur * 2}`;
+  if (cube.enAttente) return `propose ${cube.valeur * 2}`;
   return cube.proprietaire ? `(chez ${nomCouleur(cube.proprietaire)})` : '(au centre)';
 }
 
@@ -110,7 +110,7 @@ function render() {
 
     <div class="panneau">
       <div class="tour-inline">
-        <div class="tour ${etat.joueur}">Au tour de : <strong>${nomCouleur(etat.joueur)}</strong></div>
+        <div class="tour ${etat.joueur}"><strong>${nomCouleur(etat.joueur)}</strong> : à jouer</div>
         <button id="btn-lancer" ${peutLancer ? '' : 'disabled'}>Lancer les dés</button>
         <div class="des-zone">${desHTML}</div>
       </div>
