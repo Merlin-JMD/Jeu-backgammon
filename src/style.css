@@ -56,11 +56,10 @@ h1 {
   stroke-width: 1;
 }
 #message {
-  margin-top: 40px;
   min-height: 1.6em;
   font-size: 1rem;
   color: var(--or);
-  text-align: center;
+  text-align: left;
 }
 
 .panneau {
@@ -187,26 +186,14 @@ body.plein-ecran { justify-content: center; }
 }
 
 
-.badge-crawford {
-  color: #e8b84b;
-  font-weight: bold;
-  border: 1px solid #e8b84b;
-  border-radius: 4px;
-  padding: 2px 8px;
-}
+
 
 .groupe-doubleur {
   display: flex;
   align-items: center;
   gap: 12px;
 }
-.groupe-match {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px;
-}
+
 
 .poignee-resize {
   position: absolute;

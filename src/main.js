@@ -23,13 +23,7 @@ let origine = null;
 let iaActive = true;
 const JOUEUR_IA = 'sombre';
 let pointsComptabilises = false;
-let matchEtat = {
-  objectif: 7,
-  score: { clair: 0, sombre: 0 },
-  crawfordJoue: false,
-  crawfordEnAttente: false,
-  crawfordEnCours: false,
-};
+let dernierPoints = 0;
 
 function versDisposition(pointsEtat) {
   const dispo = {};
@@ -82,20 +76,12 @@ function render() {
   const tourIA = iaActive && etat.joueur === JOUEUR_IA;
   const enAttenteReponse = !!etat.cube.enAttente;
   const peutLancer = etat.des.length === 0 && !etat.gagnant && !tourIA && !enAttenteReponse;
-  const peutDoubler = !tourIA && !enAttenteReponse && !matchEtat.crawfordEnCours && peutProposerDouble(etat, etat.joueur);
+  const peutDoubler = !tourIA && !enAttenteReponse && peutProposerDouble(etat, etat.joueur);
 
-  const matchTermine = matchEtat.score.clair >= matchEtat.objectif || matchEtat.score.sombre >= matchEtat.objectif;
-  const objectifOptions = [7, 9, 11, 13, 15, 17, 21, 25]
-    .map(n => `<option value="${n}" ${n === matchEtat.objectif ? 'selected' : ''}>${n}</option>`)
-    .join('');
   const reponseDisponible = enAttenteReponse && !(iaActive && adversaire(etat.cube.enAttente) === JOUEUR_IA);
   const zoneCube = `
     <div class="zone-cube">
-      <span class="groupe-match">Match — Clair : ${matchEtat.score.clair} · Sombre : ${matchEtat.score.sombre} (objectif :
-        <select id="select-objectif" ${(matchEtat.score.clair > 0 || matchEtat.score.sombre > 0) ? 'disabled' : ''}>${objectifOptions}</select>
-        points)
-        ${matchEtat.crawfordEnCours ? '<span class="badge-crawford">Partie Crawford — doublement désactivé</span>' : ''}
-      </span>
+      <div id="message"></div>
       <div class="groupe-fin">
         <button id="btn-plein-ecran">${document.fullscreenElement ? 'Quitter le plein écran' : 'Plein écran'}</button>
         <button id="btn-nouvelle">Nouvelle partie</button>
@@ -134,7 +120,6 @@ function render() {
 
 
     <div id="plateau-cadre">${svgComplet}<div id="poignee-resize" class="poignee-resize" title="Glisser pour agrandir/rétrécir la table"></div></div>
-    <div id="message"></div>
     <div id="boutons-sortie"></div>
   `;
 
@@ -147,8 +132,6 @@ function render() {
 
   document.getElementById('btn-nouvelle').addEventListener('click', nouvellePartie);
 
-  const selectObjectif = document.getElementById('select-objectif');
-  if (selectObjectif) selectObjectif.addEventListener('change', (e) => { matchEtat.objectif = Number(e.target.value); render(); });
   document.getElementById('btn-plein-ecran').addEventListener('click', basculerPleinEcran);
 
   const svgEl = document.getElementById('plateau-svg');
@@ -208,11 +191,7 @@ function afficherMessage() {
   zoneSortie.innerHTML = '';
 
   if (etat.gagnant) {
-    const matchTermineMsg = matchEtat.score.clair >= matchEtat.objectif || matchEtat.score.sombre >= matchEtat.objectif;
-    const scoreTexte = `Score du match — Clair : ${matchEtat.score.clair} · Sombre : ${matchEtat.score.sombre}`;
-    msg.textContent = matchTermineMsg
-      ? `${nomCouleur(etat.gagnant)} remporte le match ! 🏆 (${scoreTexte})`
-      : `${nomCouleur(etat.gagnant)} remporte la partie (cube à ${etat.cube.valeur}) — ${scoreTexte}`;
+    msg.textContent = `${nomCouleur(etat.gagnant)} remporte la partie avec ${dernierPoints} point${dernierPoints > 1 ? 's' : ''} (cube à ${etat.cube.valeur}).`;
     return;
   }
   if (etat.cube.enAttente) {
@@ -263,7 +242,6 @@ function surLancerDes() {
 }
 
 function surProposerDouble() {
-  if (matchEtat.crawfordEnCours) return;
   if (!peutProposerDouble(etat, etat.joueur)) return;
   proposerDouble(etat, etat.joueur);
   render();
@@ -323,26 +301,14 @@ function jouer(o, d) {
 
 function comptabiliserVictoire() {
   if (!etat.gagnant || pointsComptabilises) return;
-  const points = calculerPoints(etat);
-  matchEtat.score[etat.gagnant] += points;
+  dernierPoints = calculerPoints(etat);
   pointsComptabilises = true;
-  const dejaEnJeu = matchEtat.score.clair >= matchEtat.objectif || matchEtat.score.sombre >= matchEtat.objectif;
-  if (!matchEtat.crawfordJoue && !dejaEnJeu && (matchEtat.score.clair === matchEtat.objectif - 1 || matchEtat.score.sombre === matchEtat.objectif - 1)) {
-    matchEtat.crawfordEnAttente = true;
-  }
 }
 
 function nouvellePartie() {
   etat = etatInitial();
   origine = null;
   pointsComptabilises = false;
-  if (matchEtat.crawfordEnAttente) {
-    matchEtat.crawfordEnCours = true;
-    matchEtat.crawfordJoue = true;
-    matchEtat.crawfordEnAttente = false;
-  } else {
-    matchEtat.crawfordEnCours = false;
-  }
   render();
 }
 
@@ -354,7 +320,7 @@ function iaJoue() {
   if (etat.des.length === 0) {
     setTimeout(() => {
       if (iaActive && etat.joueur === JOUEUR_IA && !etat.gagnant && !etat.cube.enAttente) {
-        if (!matchEtat.crawfordEnCours && peutProposerDouble(etat, JOUEUR_IA) && Math.random() < 0.2) {
+        if (peutProposerDouble(etat, JOUEUR_IA) && Math.random() < 0.2) {
           proposerDouble(etat, JOUEUR_IA);
           render();
           return;
