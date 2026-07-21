@@ -193,3 +193,70 @@ export function typeVictoire(etat) {
   }
   return backgammon ? 'backgammon' : 'gammon';
 }
+
+function pipCount(etat, j) {
+  let total = etat.barre[j] * 25;
+  for (let p = 1; p <= 24; p++) {
+    const c = etat.points[p];
+    if (c.couleur === j) total += distanceMaison(j, p) * c.nombre;
+  }
+  return total;
+}
+
+function clonerEtat(etat) {
+  return {
+    points: etat.points.map(c => ({ ...c })),
+    barre: { ...etat.barre },
+    sorties: { ...etat.sorties },
+    joueur: etat.joueur,
+    des: [...etat.des],
+    gagnant: etat.gagnant,
+    finPar: etat.finPar,
+    cube: { ...etat.cube },
+    premierTour: etat.premierTour,
+    ouvertureNombres: { ...etat.ouvertureNombres },
+  };
+}
+
+function evaluerPosition(etat, j) {
+  const adv = adversaire(j);
+  let score = pipCount(etat, adv) - pipCount(etat, j);
+  score += etat.sorties[j] * 10;
+  score -= etat.sorties[adv] * 10;
+  score -= etat.barre[j] * 15;
+  score += etat.barre[adv] * 15;
+  for (let p = 1; p <= 24; p++) {
+    const c = etat.points[p];
+    if (c.couleur === j) {
+      if (c.nombre === 1) score -= 8;
+      else if (c.nombre >= 2) score += 3 + (estDansMaison(j, p) ? 2 : 0);
+    } else if (c.couleur === adv && c.nombre === 1) {
+      score += 4;
+    }
+  }
+  return score;
+}
+
+export function meilleurCoup(etat, j) {
+  const coups = coupsPossibles(etat, j);
+  if (coups.length === 0) return null;
+  let meilleur = coups[0];
+  let meilleurScore = -Infinity;
+  for (const coup of coups) {
+    const simule = clonerEtat(etat);
+    jouerCoup(simule, j, coup.origine, coup.de);
+    const score = evaluerPosition(simule, j);
+    if (score > meilleurScore) {
+      meilleurScore = score;
+      meilleur = coup;
+    }
+  }
+  return meilleur;
+}
+export function devraitAccepterDouble(etat, j) {
+  return evaluerPosition(etat, j) >= -15;
+}
+
+export function devraitProposerDouble(etat, j) {
+  return evaluerPosition(etat, j) >= 15;
+}

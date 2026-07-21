@@ -4,7 +4,7 @@ import { construirePionsSVG, construireBarreSVG } from './pieces.js';
 import { deSVG, cubeSVG } from './des.js';
 import {
   etatInitial, lancerDes, coupsPossibles, destinationLegale,
-  jouerCoup, finDeTour, adversaire, calculerPoints, typeVictoire,
+  jouerCoup, finDeTour, adversaire, calculerPoints, typeVictoire, meilleurCoup, devraitAccepterDouble, devraitProposerDouble,
   peutProposerDouble, proposerDouble, accepterDouble, refuserDouble,
 } from './game.js';
 
@@ -324,7 +324,7 @@ function iaJoue() {
   if (etat.des.length === 0) {
     setTimeout(() => {
       if (iaActive && etat.joueur === JOUEUR_IA && !etat.gagnant && !etat.cube.enAttente) {
-        if (peutProposerDouble(etat, JOUEUR_IA) && Math.random() < 0.2) {
+        if (peutProposerDouble(etat, JOUEUR_IA) && devraitProposerDouble(etat, JOUEUR_IA)) {
           proposerDouble(etat, JOUEUR_IA);
           render();
           return;
@@ -342,11 +342,8 @@ function iaJoue() {
     }, DELAI_IA);
     return;
   }
-
-  const coups = coupsPossibles(etat, JOUEUR_IA);
-  if (coups.length === 0) return;
-
-  const choix = coups[Math.floor(Math.random() * coups.length)];
+  const choix = meilleurCoup(etat, JOUEUR_IA);
+  if (!choix) return;
   setTimeout(() => {
     if (iaActive && etat.joueur === JOUEUR_IA && !etat.gagnant) jouer(choix.origine, choix.de);
   }, DELAI_IA);
@@ -373,9 +370,15 @@ function iaRepondDouble() {
   if (adversaire(etat.cube.enAttente) !== JOUEUR_IA) return;
   setTimeout(() => {
     if (iaActive && etat.cube.enAttente && !etat.gagnant) {
-      accepterDouble(etat);
-      render();
-      document.getElementById('message').textContent = `Sombre a accepté le double (cube à ${etat.cube.valeur}).`;
+      if (devraitAccepterDouble(etat, JOUEUR_IA)) {
+        accepterDouble(etat);
+        render();
+        document.getElementById('message').textContent = `Sombre a accepté le double (cube à ${etat.cube.valeur}).`;
+      } else {
+        refuserDouble(etat);
+        comptabiliserVictoire();
+        render();
+      }
     }
   }, DELAI_IA);
 }
