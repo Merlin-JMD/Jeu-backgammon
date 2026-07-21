@@ -4,7 +4,7 @@ import { construirePionsSVG, construireBarreSVG } from './pieces.js';
 import { deSVG, cubeSVG } from './des.js';
 import {
   etatInitial, lancerDes, coupsPossibles, destinationLegale,
-  jouerCoup, finDeTour, adversaire, calculerPoints,
+  jouerCoup, finDeTour, adversaire, calculerPoints, typeVictoire,
   peutProposerDouble, proposerDouble, accepterDouble, refuserDouble,
 } from './game.js';
 
@@ -24,6 +24,7 @@ let iaActive = true;
 const JOUEUR_IA = 'sombre';
 let pointsComptabilises = false;
 let dernierPoints = 0;
+let dernierType = null;
 
 function versDisposition(pointsEtat) {
   const dispo = {};
@@ -182,7 +183,7 @@ function texteSens(joueur, o) {
   if (o === 'barre' || typeof o !== 'number') return '';
   const secteurBas = o >= 1 && o <= 12;
   const versLaDroite = joueur === 'clair' ? secteurBas : !secteurBas;
-  return versLaDroite ? ' — déplacement vers la droite →' : ' — déplacement vers la gauche ←';
+  return versLaDroite ? ' — vers la droite →' : ' — vers la gauche ←';
 }
 
 function afficherMessage() {
@@ -191,11 +192,15 @@ function afficherMessage() {
   zoneSortie.innerHTML = '';
 
   if (etat.gagnant) {
-    msg.textContent = `${nomCouleur(etat.gagnant)} remporte la partie avec ${dernierPoints} point${dernierPoints > 1 ? 's' : ''} (cube à ${etat.cube.valeur}).`;
+    msg.textContent = `${nomCouleur(etat.gagnant)} remporte la partie${dernierType === 'gammon' ? ' (gammon)' : dernierType === 'backgammon' ? ' (backgammon)' : ''} avec ${dernierPoints} point${dernierPoints > 1 ? 's' : ''} (cube à ${etat.cube.valeur}).`;
     return;
   }
   if (etat.cube.enAttente) {
     msg.textContent = `En attente de la réponse de ${nomCouleur(adversaire(etat.cube.enAttente))} au double proposé.`;
+    return;
+  }
+  if (etat.premierTour && origine === null) {
+    msg.textContent = `Tirage d'ouverture — Clair : ${etat.ouvertureNombres.clair}, Sombre : ${etat.ouvertureNombres.sombre} — ${nomCouleur(etat.joueur)} commence avec [${etat.des.join(', ')}].`;
     return;
   }
   if (iaActive && etat.joueur === JOUEUR_IA) {
@@ -203,19 +208,17 @@ function afficherMessage() {
     return;
   }
   if (etat.des.length === 0) {
-    msg.textContent = `${nomCouleur(etat.joueur)} : clique sur « Lancer les dés » pour commencer ton tour, ou propose un double.`;
-    return;
-  }
-  if (etat.premierTour && origine === null) {
-    msg.textContent = `Tirage d'ouverture — Clair : ${etat.ouvertureNombres.clair}, Sombre : ${etat.ouvertureNombres.sombre} — ${nomCouleur(etat.joueur)} commence avec [${etat.des.join(', ')}].`;
+    msg.textContent = peutProposerDouble(etat, etat.joueur)
+      ? `${nomCouleur(etat.joueur)} : clique sur « Lancer les dés » ou propose un double.`
+      : `${nomCouleur(etat.joueur)} : clique sur « Lancer les dés ».`;
     return;
   }
   if (origine === null) {
-    msg.textContent = `${nomCouleur(etat.joueur)} : dés restants [${etat.des.join(', ')}] — les flèches en pointillés dorés peuvent jouer, clique sur l'une d'elles.`;
+    msg.textContent = `${nomCouleur(etat.joueur)} : dés restants [${etat.des.join(', ')}] - clique sur l'une des flèches en pointillées dorées.`;
     return;
   }
   const { sorties } = ciblesDepuisOrigine();
-  msg.textContent = `Pion sélectionné${texteSens(etat.joueur, origine)} — clique une case en surbrillance pour le déplacer.`;
+  msg.textContent = `Pion sélectionné${texteSens(etat.joueur, origine)} — clique une case en surbrillance.`;
   if (sorties.length) {
     const boutons = sorties.map(d =>
       `<button class="btn-sortir" data-de="${d}">Sortir ce pion (dé ${d})</button>`
@@ -302,6 +305,7 @@ function jouer(o, d) {
 function comptabiliserVictoire() {
   if (!etat.gagnant || pointsComptabilises) return;
   dernierPoints = calculerPoints(etat);
+  dernierType = typeVictoire(etat);
   pointsComptabilises = true;
 }
 

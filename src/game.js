@@ -139,6 +139,7 @@ export function finDeTour(etat) {
 export function peutProposerDouble(etat, j) {
   if (etat.gagnant || etat.des.length > 0) return false;
   if (etat.cube.enAttente) return false;
+  if (etat.cube.valeur >= 64) return false;
   return etat.cube.proprietaire === null || etat.cube.proprietaire === j;
 }
 export function proposerDouble(etat, j) {
@@ -176,4 +177,19 @@ export function calculerPoints(etat) {
     }
   }
   return etat.cube.valeur * (backgammon ? 3 : 2);
+}
+
+export function typeVictoire(etat) {
+  if (!etat.gagnant) return null;
+  if (etat.finPar === 'refus') return 'simple';
+  const perdant = adversaire(etat.gagnant);
+  if (etat.sorties[perdant] > 0) return 'simple';
+  const maisonGagnant = etat.gagnant === 'clair' ? [1, 2, 3, 4, 5, 6] : [19, 20, 21, 22, 23, 24];
+  let backgammon = etat.barre[perdant] > 0;
+  if (!backgammon) {
+    for (const p of maisonGagnant) {
+      if (etat.points[p].couleur === perdant && etat.points[p].nombre > 0) { backgammon = true; break; }
+    }
+  }
+  return backgammon ? 'backgammon' : 'gammon';
 }
