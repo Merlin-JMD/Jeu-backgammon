@@ -112,7 +112,7 @@ button:disabled { opacity: 0.4; cursor: default; }
 .fleche.cible { filter: brightness(1.35); cursor: pointer; stroke: var(--or); stroke-width: 3; }
 .barre-zone { cursor: default; }
 .barre-zone.origine-selectionnee { stroke: var(--or); stroke-width: 3; }
-#boutons-sortie { margin-top: 8px; display: flex; justify-content: center; gap: 8px; }
+#boutons-sortie { margin-top: 8px; min-height: 40px; display: flex; justify-content: center; align-items: center; gap: 8px; }
 .fleche.origine-possible { stroke: var(--or); stroke-width: 2; stroke-dasharray: 6 4; cursor: pointer; }
 .barre-zone.origine-possible { stroke: var(--or); stroke-width: 2; stroke-dasharray: 6 4; cursor: pointer; }
 .numero-point { font-family: Georgia, serif; font-size: 15px; fill: var(--or); pointer-events: none; user-select: none; }
